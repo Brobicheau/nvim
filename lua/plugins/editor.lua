@@ -1,9 +1,112 @@
 return {
   {
+    "echasnovski/mini.surround",
+    recommended = true,
+    opts = {
+      mappings = {
+        add = "ms", -- Add surrounding in Normal and Visual modes
+        delete = "md", -- Delete surrounding
+        find = "mf", -- Find surrounding (to the right)
+        find_left = "mF", -- Find surrounding (to the left)
+        highlight = "mh", -- Highlight surrounding
+        replace = "mr", -- Replace surrounding
+        update_n_lines = "mn", -- Update `n_lines`
+      },
+    },
+  },
+  {
+    "folke/flash.nvim",
+    event = "VeryLazy",
+    keys = {
+      {
+        "s",
+        mode = { "n", "x", "o" },
+        function()
+          vim.api.nvim_set_hl(0, "FlashLabel", {
+            bold = true,
+            fg = "#15161e",
+            bg = "#f7768e",
+          })
+          local Flash = require("flash")
+
+          ---@param opts Flash.Format
+          local function format(opts)
+            -- always show first and second label
+            return {
+              { opts.match.label1, "FlashMatch" },
+              { opts.match.label2, "FlashLabel" },
+            }
+          end
+
+          Flash.jump({
+            search = { mode = "search" },
+            label = { after = false, before = { 0, 0 }, uppercase = false, format = format },
+            pattern = [[\<]],
+            action = function(match, state)
+              Flash.jump({
+                search = { max_length = 0 },
+                highlight = { matches = true },
+                label = { format = format },
+                matcher = function(win)
+                  -- limit matches to the current label
+                  return vim.tbl_filter(function(m)
+                    return m.label == match.label and m.win == win
+                  end, state.results)
+                end,
+                labeler = function(matches)
+                  for _, m in ipairs(matches) do
+                    m.label = m.label2 -- use the second label
+                  end
+                end,
+              })
+            end,
+            labeler = function(matches, state)
+              local labels = state:labels()
+              for m, match in ipairs(matches) do
+                match.label1 = labels[math.floor((m - 1) / #labels) + 1]
+                match.label2 = labels[(m - 1) % #labels + 1]
+                match.label = match.label1
+              end
+            end,
+          })
+        end,
+        desc = "Flash",
+      },
+      {
+        "S",
+        mode = { "n", "o", "x" },
+        function()
+          require("flash").treesitter()
+        end,
+        desc = "Flash Treesitter",
+      },
+      {
+        "<c-s>",
+        mode = { "c" },
+        function()
+          require("flash").toggle()
+        end,
+        desc = "Toggle Flash Search",
+      },
+    },
+  },
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = {
+      incremental_selection = {
+        enable = true,
+        keymaps = {
+          init_selection = "mim",
+          node_incremental = "<C-k>",
+          scope_incremental = false,
+          node_decremental = "<C-j>",
+        },
+      },
+    },
+  },
+  {
     "epwalsh/obsidian.nvim",
     version = "*", -- recommended, use latest release instead of latest commit
-    lazy = true,
-    ft = "markdown",
     -- Replace the above line with this if you only want to load obsidian.nvim for markdown files in your vault:
     -- event = {
     --   -- If you want to use the home shortcut '~' here you need to call 'vim.fn.expand'.
@@ -33,35 +136,19 @@ return {
     },
   },
   {
-    "telescope.nvim",
-    dependencies = {
-      "nvim-telescope/telescope-fzf-native.nvim",
-      build = "make",
-      config = function()
-        local function find_dotfiles()
-          require("telescope.builtin").git_files({ cwd = "~/.dotfiles", show_untracked = true, hidden = true })
-        end
-
-        vim.keymap.set("n", "<leader>fd", find_dotfiles, { desc = "Fine Dotfiles" })
-      end,
-    },
-  },
-  {
-    "theprimeagen/harpoon",
+    "ibhagwan/fzf-lua",
     config = function()
-      require("harpoon").setup({ menu = { width = vim.api.nvim_win_get_width(0) - 20 } })
-      local mark = require("harpoon.mark")
-      local ui = require("harpoon.ui")
-
-      vim.keymap.set("n", "<leader>m", mark.add_file)
-      vim.keymap.set("n", "<leader><BS>", ui.toggle_quick_menu, { desc = "Harpoon Quick Menu" })
-      vim.keymap.set(
-        "n",
-        "<C-n>",
-        "<cmd>lua require('harpoon.ui').nav_next()<CR>",
-        { remap = true, desc = "Harpoon Quick Menu" }
-      )
-      vim.keymap.set("n", "<C-p>", "<cmd>lua require('harpoon.ui').nav_prev()<CR>", { desc = "Harpoon Quick Menu" })
+      require("fzf-lua").setup({
+        winopts = {
+          width = 0.90,
+          preview = {
+            horizontal = "right:30%",
+          },
+        },
+        defaults = {
+          formatter = "path.filename_first",
+        },
+      })
     end,
   },
 }

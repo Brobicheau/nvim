@@ -13,7 +13,7 @@ return {
   },
   {
     "folke/noice.nvim",
-    opts = { presets = { lsp_doc_border = true } },
+    opts = { lsp = { hover = { silent = true } }, presets = { lsp_doc_border = true } },
   },
   {
     "echasnovski/mini.files",
