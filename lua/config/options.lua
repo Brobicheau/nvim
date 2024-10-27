@@ -6,3 +6,5 @@ vim.opt.clipboard = ""
 vim.api.nvim_set_hl(0, "FlashLabel", {
   bold = false,
 })
+vim.opt.inccommand = "split"
+vim.cmd([[ set noswapfile ]])
